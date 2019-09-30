@@ -2,22 +2,25 @@ module Main where
 
 import Graphics.Win32 hiding (try)
 import System.Win32.DLL (getModuleHandle)
-import Debug.Trace
+
 import System.Environment (getArgs)
 
 import Data.Bits (shift)
-import Control.Monad (when, mapM_)
 import Data.Maybe (isJust)
-import Lib
-import Control.Exception (try, SomeException)
-import System.Exit (exitFailure)
 
+import Control.Monad (when)
+import Control.Exception (try, SomeException)
+
+import Lib  ( createTable
+            , drawTable
+            , resizeTable
+            , stubTable
+            , getHeight
+            , Table
+            )
 
 wM_MOUSEWHEEL :: WindowMessage 
 wM_MOUSEWHEEL = 0x020A
-
-readByLines :: FilePath -> IO [String]
-readByLines path = readFile path >>= return . filter (not . null) . lines
 
 main :: IO ()
 main = do 
@@ -67,15 +70,13 @@ wndProc mdc scrY table
             return 0
 
         | msg == wM_CREATE = do
-            args <- getArgs
-            let path = head args 
+            path <- fmap head $ getArgs
             file <- try $ readFile path :: IO (Either SomeException String)
             let strs = 
                     case file of 
-                        Left e -> error "something went wrong"
+                        Left e -> error "File does not exist / Path is not specified."
                         Right contents -> filter (not . null) . lines $ contents
 
-                        
             table' <- createTable hWnd mdc strs
             drawTable mdc table' 
 
@@ -94,7 +95,7 @@ wndProc mdc scrY table
             return 1
 
         | msg == wM_MOUSEWHEEL = do 
-            let d = (* (-5)) $ fromIntegral wParam `shift` (-16) `div` 120
+            let d = (* (-8)) $ fromIntegral wParam `shift` (-16) `div` 120
             let newScrY = max 0 $ d + scrY
 
             when (scrY /= 0 || newScrY /= 0) $ do
@@ -108,8 +109,14 @@ wndProc mdc scrY table
 
         | msg == wM_SIZE = do 
             (x0', y0', x1', y1') <- getWindowRect hWnd 
-            let h = fst $ getHeight table
             let (x0, y0, x1, y1) = (fromIntegral x0', fromIntegral y0', fromIntegral x1', fromIntegral y1')
+
+
+            let h = fst $ getHeight table 
+            let wH = fromIntegral $ (y1 - y0)
+            when (scrY + wH + 39 > h) $     -- magic number for borders
+                setWindowClosure hWnd (wndProc mdc (h - wH - 39) table)
+
             resize hWnd x0 y0 (x1 - x0) (y1 - y0)
 
             return 0
@@ -135,7 +142,6 @@ onPaint hWnd hdc mdc scrY table = do
     deleteBrush hBrush
 
     return table'
-    
 
 resize :: HWND -> Int -> Int -> Int -> Int -> IO ()
 resize hWnd x0 y0 dx dy 
@@ -146,7 +152,6 @@ resize hWnd x0 y0 dx dy
     where
         minX = 500
         minY = 300
-
 
 messagePump :: LPMSG -> IO ()
 messagePump lpMsg = do 

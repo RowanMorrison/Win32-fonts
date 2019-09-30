@@ -40,7 +40,6 @@ createTable hWnd hdc strs = do
     font <- fontDimension hdc
     return $ createPureTable (x1 - x0 - 14) font strs
     
-            -- where     -- from what
 createPureTable :: Width -> Font -> [String] -> Table 
 createPureTable wndW f@(charW, charH) strs = ((zip rows rowsH), cellW, charN, f)
     where 
@@ -68,11 +67,10 @@ resizeTable wndW (rows, cellW, charN, font) = createPureTable wndW font text
 drawTable :: HDC -> Table -> IO ()
 drawTable hdc table@(rows, cellW, charN, (_, charH)) = do
     foldM_ step 0 rows
-
-    let (scrW, ws) = getWidth table
-    let (scrH, hs) = getHeight table
     drawGrid hdc scrW scrH ws hs
     where 
+        (scrW, ws) = getWidth table
+        (scrH, hs) = getHeight table
         step = \dH row@(_, rowH) -> (drawRow hdc dH cellW charN charH row) >> return (dH + rowH) 
 
 -- type Table = ([Row], Width, LONG, Height)
