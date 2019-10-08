@@ -10,7 +10,7 @@ import System.Environment (getArgs)
 import Data.Bits (shift)
 import Data.Maybe (isJust)
 
-import Control.Monad.Trans.Reader 
+import Control.Monad.Trans.Reader (runReaderT, ReaderT, ask) 
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Exception (try, SomeException)
