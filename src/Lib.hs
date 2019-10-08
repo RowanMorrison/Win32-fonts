@@ -102,4 +102,4 @@ drawCell :: HDC -> LONG -> LONG -> LONG -> Height -> Cell -> IO ()
 drawCell hdc x y charN charH str = mapM_ draw strs
     where 
         strs = zip [0..] $ hack charN str 
-        draw = \(n, str) -> textOut hdc (fromIntegral x) (y + fromIntegral charH * n) str
+        draw = \(n, str') -> textOut hdc (fromIntegral x) (y + fromIntegral charH * n) str'
